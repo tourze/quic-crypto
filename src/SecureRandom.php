@@ -31,7 +31,7 @@ class SecureRandom
 
         try {
             return random_bytes($length);
-        } catch  (\Throwable $e) {
+        } catch (\Throwable $e) {
             throw CryptoException::opensslError('安全随机数生成失败: ' . $e->getMessage());
         }
     }
@@ -132,7 +132,7 @@ class SecureRandom
 
         try {
             return random_int($min, $max);
-        } catch  (\Throwable $e) {
+        } catch (\Throwable $e) {
             throw CryptoException::opensslError('安全随机整数生成失败: ' . $e->getMessage());
         }
     }
