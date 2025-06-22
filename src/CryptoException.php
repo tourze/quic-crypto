@@ -71,7 +71,7 @@ class CryptoException extends Exception
     public static function encryptionFailed(string $reason = ''): self
     {
         $message = '加密失败';
-        if ($reason) {
+        if ($reason !== '') {
             $message .= ": {$reason}";
         }
         return new self($message, self::ENCRYPTION_FAILED);
@@ -83,7 +83,7 @@ class CryptoException extends Exception
     public static function decryptionFailed(string $reason = ''): self
     {
         $message = '解密失败';
-        if ($reason) {
+        if ($reason !== '') {
             $message .= ": {$reason}";
         }
         return new self($message, self::DECRYPTION_FAILED);
@@ -95,7 +95,7 @@ class CryptoException extends Exception
     public static function invalidKey(string $reason = ''): self
     {
         $message = '无效的密钥';
-        if ($reason) {
+        if ($reason !== '') {
             $message .= ": {$reason}";
         }
         return new self($message, self::INVALID_KEY);
@@ -107,7 +107,7 @@ class CryptoException extends Exception
     public static function invalidNonce(string $reason = ''): self
     {
         $message = '无效的随机数';
-        if ($reason) {
+        if ($reason !== '') {
             $message .= ": {$reason}";
         }
         return new self($message, self::INVALID_NONCE);
@@ -119,7 +119,7 @@ class CryptoException extends Exception
     public static function invalidParameter(string $reason = ''): self
     {
         $message = '无效的参数';
-        if ($reason) {
+        if ($reason !== '') {
             $message .= ": {$reason}";
         }
         return new self($message, self::INVALID_PARAMETER);
@@ -152,7 +152,7 @@ class CryptoException extends Exception
     public static function keyDerivationFailed(string $reason = ''): self
     {
         $message = '密钥派生失败';
-        if ($reason) {
+        if ($reason !== '') {
             $message .= ": {$reason}";
         }
         return new self($message, self::KEY_DERIVATION_FAILED);

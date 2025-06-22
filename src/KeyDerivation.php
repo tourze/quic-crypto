@@ -35,10 +35,7 @@ class KeyDerivation
 
         $prk = hash_hmac($hash, $ikm, $salt, true);
         
-        if ($prk === false) {
-            throw CryptoException::keyDerivationFailed('HKDF-Extract 计算失败');
-        }
-
+        // hash_hmac 在使用 true 参数时总是返回字符串
         return $prk;
     }
 
@@ -78,10 +75,7 @@ class KeyDerivation
         for ($i = 1; $i <= $n; $i++) {
             $t = hash_hmac($hash, $t . $info . chr($i), $prk, true);
             
-            if ($t === false) {
-                throw CryptoException::keyDerivationFailed('HKDF-Expand 计算失败');
-            }
-            
+            // hash_hmac 在使用 true 参数时总是返回字符串
             $okm .= $t;
         }
 
@@ -112,7 +106,7 @@ class KeyDerivation
 
     /**
      * QUIC 专用的密钥派生
-     * 
+     *
      * 根据 RFC 9001 实现 QUIC 协议的密钥派生
      *
      * @param string $secret 共享密钥
@@ -130,7 +124,7 @@ class KeyDerivation
 
     /**
      * 构建 QUIC 标签
-     * 
+     *
      * 根据 TLS 1.3 格式构建 HKDF 标签
      *
      * @param string $label 标签字符串
@@ -161,7 +155,7 @@ class KeyDerivation
 
     /**
      * 生成初始盐值
-     * 
+     *
      * QUIC v1 使用的初始盐值
      */
     public static function getQuicInitialSalt(): string
@@ -178,7 +172,7 @@ class KeyDerivation
 
     /**
      * 清理敏感数据
-     * 
+     *
      * 安全地清除内存中的敏感数据
      *
      * @param string &$data 要清理的数据

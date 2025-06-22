@@ -72,7 +72,7 @@ class KeyManager
 
     /**
      * 派生初始密钥
-     * 
+     *
      * 根据 RFC 9001 Section 5.2 实现初始密钥派生
      *
      * @param string $connectionId 目标连接 ID
@@ -352,9 +352,9 @@ class KeyManager
 
     /**
      * 获取密码套件的关键材料
-     * 
+     *
      * 用于确保不同密码套件实例产生不同的密钥
-     * 
+     *
      * @return string 密码套件的关键材料
      */
     private function getSuiteKeyMaterial(): string

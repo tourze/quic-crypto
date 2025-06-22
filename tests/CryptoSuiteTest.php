@@ -86,7 +86,6 @@ class CryptoSuiteTest extends TestCase
     {
         $supportedSuites = CryptoSuite::getSupportedSuites();
 
-        $this->assertIsArray($supportedSuites);
         $this->assertContains('TLS_AES_128_GCM_SHA256', $supportedSuites);
         $this->assertContains('TLS_AES_256_GCM_SHA384', $supportedSuites);
 
@@ -99,7 +98,6 @@ class CryptoSuiteTest extends TestCase
     {
         $bestSuite = CryptoSuite::selectBestSuite();
         $this->assertNotNull($bestSuite);
-        $this->assertIsString($bestSuite);
 
         $supportedSuites = CryptoSuite::getSupportedSuites();
         $this->assertContains($bestSuite, $supportedSuites);
@@ -147,7 +145,6 @@ class CryptoSuiteTest extends TestCase
         $suite = CryptoSuite::createAES128GCM($key);
         $info = $suite->getInfo();
 
-        $this->assertIsArray($info);
         $this->assertArrayHasKey('name', $info);
         $this->assertArrayHasKey('aead_algorithm', $info);
         $this->assertArrayHasKey('hash_algorithm', $info);

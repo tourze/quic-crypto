@@ -152,7 +152,6 @@ class SecureRandomTest extends TestCase
     {
         $info = SecureRandom::getRandomSourceInfo();
         
-        $this->assertIsArray($info);
         $this->assertArrayHasKey('random_bytes_available', $info);
         $this->assertArrayHasKey('openssl_available', $info);
         $this->assertArrayHasKey('sodium_available', $info);

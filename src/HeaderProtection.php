@@ -159,12 +159,14 @@ class HeaderProtection
         
         // 使用 ChaCha20 算法生成密钥流（通过加密零字节）
         if (in_array('chacha20', openssl_get_cipher_methods(), true)) {
+            // OpenSSL 的 ChaCha20 需要 16 字节的 IV，所以需要填充 4 个零字节
+            $paddedNonce = $nonce . str_repeat("\x00", 4);
             $encrypted = openssl_encrypt(
                 $plaintext,
                 'chacha20',
                 $this->headerKey,
                 OPENSSL_RAW_DATA,
-                $nonce
+                $paddedNonce
             );
 
             if ($encrypted === false) {

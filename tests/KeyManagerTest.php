@@ -40,7 +40,6 @@ class KeyManagerTest extends TestCase
 
         $secrets = $this->keyManager->deriveInitialSecrets($connectionId, $isServer);
 
-        $this->assertIsArray($secrets);
         $this->assertArrayHasKey('client', $secrets);
         $this->assertArrayHasKey('server', $secrets);
 
@@ -84,7 +83,6 @@ class KeyManagerTest extends TestCase
 
         $secrets = $this->keyManager->deriveHandshakeSecrets($handshakeSecret, $isServer);
 
-        $this->assertIsArray($secrets);
         $this->assertArrayHasKey('client', $secrets);
         $this->assertArrayHasKey('server', $secrets);
 
@@ -103,7 +101,6 @@ class KeyManagerTest extends TestCase
 
         $secrets = $this->keyManager->deriveApplicationSecrets($masterSecret, $isServer);
 
-        $this->assertIsArray($secrets);
         $this->assertArrayHasKey('client', $secrets);
         $this->assertArrayHasKey('server', $secrets);
 

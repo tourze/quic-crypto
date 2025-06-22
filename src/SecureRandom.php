@@ -207,7 +207,7 @@ class SecureRandom
 
     /**
      * 常数时间字符串比较
-     * 
+     *
      * 防止时序攻击的安全字符串比较
      *
      * @param string $known 已知字符串
