@@ -6,7 +6,7 @@ namespace Tourze\QUIC\Crypto\Tests;
 
 use PHPUnit\Framework\TestCase;
 use Tourze\QUIC\Crypto\AES128GCM;
-use Tourze\QUIC\Crypto\CryptoException;
+use Tourze\QUIC\Crypto\Exception\CryptoException;
 
 /**
  * AES-128-GCM 测试类

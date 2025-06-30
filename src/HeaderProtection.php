@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Tourze\QUIC\Crypto;
 
+use Tourze\QUIC\Crypto\Exception\CryptoException;
+
 /**
  * QUIC 包头保护实现
- * 
+ *
  * 根据 RFC 9001 Section 5.4 实现包头保护功能
  * 保护 QUIC 包头中的关键信息，防止流量分析
  */

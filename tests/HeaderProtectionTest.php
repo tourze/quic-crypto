@@ -8,7 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Tourze\QUIC\Crypto\AES128GCM;
 use Tourze\QUIC\Crypto\AES256GCM;
 use Tourze\QUIC\Crypto\ChaCha20Poly1305;
-use Tourze\QUIC\Crypto\CryptoException;
+use Tourze\QUIC\Crypto\Exception\CryptoException;
 use Tourze\QUIC\Crypto\HeaderProtection;
 
 /**

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tourze\QUIC\Crypto\Tests;
 
 use PHPUnit\Framework\TestCase;
-use Tourze\QUIC\Crypto\CryptoException;
+use Tourze\QUIC\Crypto\Exception\CryptoException;
 use Tourze\QUIC\Crypto\SecureRandom;
 
 /**

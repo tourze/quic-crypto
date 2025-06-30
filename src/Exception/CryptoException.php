@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Tourze\QUIC\Crypto;
+namespace Tourze\QUIC\Crypto\Exception;
 
 use Exception;
 
 /**
  * 加密操作异常类
- * 
+ *
  * 用于处理所有加密、解密、密钥派生等操作中的错误
  */
 class CryptoException extends Exception

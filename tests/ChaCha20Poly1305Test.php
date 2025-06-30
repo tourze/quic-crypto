@@ -6,7 +6,7 @@ namespace Tourze\QUIC\Crypto\Tests;
 
 use PHPUnit\Framework\TestCase;
 use Tourze\QUIC\Crypto\ChaCha20Poly1305;
-use Tourze\QUIC\Crypto\CryptoException;
+use Tourze\QUIC\Crypto\Exception\CryptoException;
 
 /**
  * ChaCha20-Poly1305 测试类

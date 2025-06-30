@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Tourze\QUIC\Crypto;
 
+use Tourze\QUIC\Crypto\Exception\CryptoException;
+
 /**
  * AEAD (Authenticated Encryption with Associated Data) 接口
- * 
+ *
  * 实现 QUIC 协议所需的认证加密功能
  * 支持 AES-GCM 和 ChaCha20-Poly1305 算法
  */

@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Tourze\QUIC\Crypto;
 
+use Tourze\QUIC\Crypto\Exception\CryptoException;
+
 /**
  * ChaCha20-Poly1305 AEAD 实现
- * 
+ *
  * 使用 OpenSSL 或 libsodium 实现的 ChaCha20-Poly1305 认证加密算法
  * 符合 RFC 8439 和 QUIC 协议要求
  */

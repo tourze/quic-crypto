@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Tourze\QUIC\Crypto;
 
+use Tourze\QUIC\Crypto\Exception\CryptoException;
+
 /**
  * 密码套件管理
- * 
+ *
  * 管理和选择 QUIC 协议支持的密码套件
  * 包括 AEAD 算法和哈希算法的组合
  */

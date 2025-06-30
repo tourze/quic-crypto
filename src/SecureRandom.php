@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Tourze\QUIC\Crypto;
 
+use Tourze\QUIC\Crypto\Exception\CryptoException;
+
 /**
  * 安全随机数生成器
- * 
+ *
  * 提供密码学安全的随机数生成功能
  * 用于密钥生成、随机数生成等安全相关操作
  */

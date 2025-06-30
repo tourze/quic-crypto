@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Tourze\QUIC\Crypto;
 
+use Tourze\QUIC\Crypto\Exception\CryptoException;
+
 /**
  * HKDF 密钥派生功能
- * 
+ *
  * 基于 RFC 5869 实现的 HMAC-based Key Derivation Function
  * 提供安全的密钥派生和扩展功能
  */

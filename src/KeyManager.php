@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Tourze\QUIC\Crypto;
 
+use Tourze\QUIC\Crypto\Exception\CryptoException;
+
 /**
  * QUIC 密钥管理器
- * 
+ *
  * 负责管理 QUIC 连接的所有密钥，包括初始密钥、握手密钥和应用数据密钥
  * 实现密钥派生、更新和安全清理功能
  */

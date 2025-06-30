@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Tourze\QUIC\Crypto;
 
+use Tourze\QUIC\Crypto\Exception\CryptoException;
+
 /**
  * AES-256-GCM AEAD 实现
- * 
+ *
  * 使用 OpenSSL 实现的 AES-256-GCM 认证加密算法
  * 符合 RFC 5116 和 QUIC 协议要求
  */
