@@ -4,21 +4,27 @@ declare(strict_types=1);
 
 namespace Tourze\QUIC\Crypto\Tests;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Tourze\QUIC\Crypto\ChaCha20Poly1305;
 use Tourze\QUIC\Crypto\Exception\CryptoException;
 
 /**
  * ChaCha20-Poly1305 测试类
+ *
+ * @internal
  */
-class ChaCha20Poly1305Test extends TestCase
+#[CoversClass(ChaCha20Poly1305::class)]
+final class ChaCha20Poly1305Test extends TestCase
 {
     private ChaCha20Poly1305 $chacha20poly1305;
 
     protected function setUp(): void
     {
+        parent::setUp();
+
         if (!ChaCha20Poly1305::isSupported()) {
-            $this->markTestSkipped('ChaCha20-Poly1305 不被系统支持');
+            self::markTestSkipped('ChaCha20-Poly1305 不被系统支持');
         }
 
         // 使用测试密钥
@@ -293,17 +299,43 @@ class ChaCha20Poly1305Test extends TestCase
         $aad = 'performance test';
 
         $startTime = microtime(true);
-        
-        for ($i = 0; $i < 10; $i++) {
+
+        for ($i = 0; $i < 10; ++$i) {
             $ciphertext = $this->chacha20poly1305->encrypt($plaintext, $nonce, $aad);
             $decrypted = $this->chacha20poly1305->decrypt($ciphertext, $nonce, $aad);
             $this->assertEquals($plaintext, $decrypted);
         }
-        
+
         $endTime = microtime(true);
         $duration = $endTime - $startTime;
-        
+
         // 确保性能在合理范围内（10次加解密操作应该在1秒内完成）
         $this->assertLessThan(1.0, $duration, 'ChaCha20-Poly1305 性能测试超时');
     }
-} 
+
+    public function testEncrypt(): void
+    {
+        $plaintext = 'Test encrypt method for ChaCha20';
+        $nonce = str_repeat("\x01", 12);
+        $aad = 'test aad for chacha20';
+
+        $ciphertext = $this->chacha20poly1305->encrypt($plaintext, $nonce, $aad);
+
+        $this->assertIsString($ciphertext);
+        $this->assertGreaterThan(strlen($plaintext), strlen($ciphertext));
+        $this->assertNotEquals($plaintext, $ciphertext);
+    }
+
+    public function testDecrypt(): void
+    {
+        $plaintext = 'Test decrypt method for ChaCha20';
+        $nonce = str_repeat("\x02", 12);
+        $aad = 'test aad for chacha20';
+
+        $ciphertext = $this->chacha20poly1305->encrypt($plaintext, $nonce, $aad);
+        $decrypted = $this->chacha20poly1305->decrypt($ciphertext, $nonce, $aad);
+
+        $this->assertIsString($decrypted);
+        $this->assertEquals($plaintext, $decrypted);
+    }
+}

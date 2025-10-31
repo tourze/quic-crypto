@@ -18,9 +18,11 @@ class KeyDerivation
      * HKDF-Extract 步骤：从输入密钥材料中提取伪随机密钥
      *
      * @param string $salt 盐值（可选）
-     * @param string $ikm 输入密钥材料 (Input Keying Material)
+     * @param string $ikm  输入密钥材料 (Input Keying Material)
      * @param string $hash 哈希算法名称
+     *
      * @return string 伪随机密钥 (PRK)
+     *
      * @throws CryptoException 如果哈希算法不支持或计算失败
      */
     public static function hkdfExtract(string $salt, string $ikm, string $hash = 'sha256'): string
@@ -30,25 +32,26 @@ class KeyDerivation
         }
 
         // 如果没有提供盐值，使用零填充的字符串，长度为哈希函数输出长度
-        if ($salt === '') {
+        if ('' === $salt) {
             $hashLength = strlen(hash($hash, '', true));
             $salt = str_repeat("\x00", $hashLength);
         }
 
-        $prk = hash_hmac($hash, $ikm, $salt, true);
-        
+        return hash_hmac($hash, $ikm, $salt, true);
+
         // hash_hmac 在使用 true 参数时总是返回字符串
-        return $prk;
     }
 
     /**
      * HKDF-Expand 步骤：将伪随机密钥扩展为所需长度的输出密钥材料
      *
-     * @param string $prk 伪随机密钥
-     * @param string $info 上下文信息
-     * @param int $length 输出密钥材料长度
-     * @param string $hash 哈希算法名称
+     * @param string $prk    伪随机密钥
+     * @param string $info   上下文信息
+     * @param int    $length 输出密钥材料长度
+     * @param string $hash   哈希算法名称
+     *
      * @return string 输出密钥材料 (OKM)
+     *
      * @throws CryptoException 如果参数无效或计算失败
      */
     public static function hkdfExpand(string $prk, string $info, int $length, string $hash = 'sha256'): string
@@ -65,18 +68,16 @@ class KeyDerivation
         $maxLength = 255 * $hashLength;
 
         if ($length > $maxLength) {
-            throw CryptoException::invalidParameter(
-                sprintf('输出长度不能超过 %d 字节 (255 * %d)', $maxLength, $hashLength)
-            );
+            throw CryptoException::invalidParameter(sprintf('输出长度不能超过 %d 字节 (255 * %d)', $maxLength, $hashLength));
         }
 
         $n = (int) ceil($length / $hashLength);
         $okm = '';
         $t = '';
 
-        for ($i = 1; $i <= $n; $i++) {
+        for ($i = 1; $i <= $n; ++$i) {
             $t = hash_hmac($hash, $t . $info . chr($i), $prk, true);
-            
+
             // hash_hmac 在使用 true 参数时总是返回字符串
             $okm .= $t;
         }
@@ -87,22 +88,25 @@ class KeyDerivation
     /**
      * 完整的 HKDF 操作（Extract + Expand）
      *
-     * @param string $ikm 输入密钥材料
-     * @param int $length 输出密钥材料长度
-     * @param string $info 上下文信息
-     * @param string $salt 盐值
-     * @param string $hash 哈希算法名称
+     * @param string $ikm    输入密钥材料
+     * @param int    $length 输出密钥材料长度
+     * @param string $info   上下文信息
+     * @param string $salt   盐值
+     * @param string $hash   哈希算法名称
+     *
      * @return string 派生的密钥材料
+     *
      * @throws CryptoException 如果派生失败
      */
     public static function hkdf(
-        string $ikm, 
-        int $length, 
-        string $info = '', 
-        string $salt = '', 
-        string $hash = 'sha256'
+        string $ikm,
+        int $length,
+        string $info = '',
+        string $salt = '',
+        string $hash = 'sha256',
     ): string {
         $prk = self::hkdfExtract($salt, $ikm, $hash);
+
         return self::hkdfExpand($prk, $info, $length, $hash);
     }
 
@@ -112,15 +116,18 @@ class KeyDerivation
      * 根据 RFC 9001 实现 QUIC 协议的密钥派生
      *
      * @param string $secret 共享密钥
-     * @param string $label 标签
-     * @param int $length 输出长度
+     * @param string $label  标签
+     * @param int    $length 输出长度
+     *
      * @return string 派生的密钥
+     *
      * @throws CryptoException 如果派生失败
      */
     public static function quicKDF(string $secret, string $label, int $length): string
     {
         // QUIC 使用 TLS 1.3 的标签格式
         $quicLabel = self::buildQuicLabel($label, $length);
+
         return self::hkdfExpand($secret, $quicLabel, $length, 'sha256');
     }
 
@@ -129,21 +136,22 @@ class KeyDerivation
      *
      * 根据 TLS 1.3 格式构建 HKDF 标签
      *
-     * @param string $label 标签字符串
-     * @param int $length 输出长度
+     * @param string $label  标签字符串
+     * @param int    $length 输出长度
+     *
      * @return string 编码后的标签
      */
     private static function buildQuicLabel(string $label, int $length): string
     {
         $fullLabel = 'tls13 ' . $label;
-        
+
         // 构建 HkdfLabel 结构
         // struct {
         //     uint16 length;
         //     opaque label<7..255>;
         //     opaque context<0..255>;
         // } HkdfLabel;
-        
+
         $labelLength = strlen($fullLabel);
         if ($labelLength > 255) {
             throw CryptoException::invalidParameter('标签长度不能超过 255 字节');
@@ -164,11 +172,11 @@ class KeyDerivation
     {
         // RFC 9001 Section 5.2: Initial Secrets
         $result = hex2bin('38762cf7f55934b34d179ae6a4c80cadccbb7f0a');
-        
-        if ($result === false) {
+
+        if (false === $result) {
             throw CryptoException::keyDerivationFailed('初始盐值解码失败');
         }
-        
+
         return $result;
     }
 
@@ -177,9 +185,10 @@ class KeyDerivation
      *
      * 安全地清除内存中的敏感数据
      *
-     * @param string &$data 要清理的数据
+     * @param string $data 要清理的数据
+     * @return string 清理后的数据（空字符串）
      */
-    public static function secureClear(string &$data): void
+    public static function secureClear(string $data): string
     {
         $length = strlen($data);
         if ($length > 0) {
@@ -194,5 +203,7 @@ class KeyDerivation
                 $data = str_repeat("\x00", $length);
             }
         }
+
+        return '';
     }
-} 
+}

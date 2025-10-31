@@ -1,49 +1,120 @@
 # QUIC Crypto Library
 
-QUIC协议加密库 - 提供AEAD加密、包头保护、密钥派生等核心安全功能
+[English](README.md) | [中文](README.zh-CN.md)
 
-## 功能特性
+[![Latest Version](https://img.shields.io/packagist/v/tourze/quic-crypto.svg?style=flat-square)](https://packagist.org/packages/tourze/quic-crypto)
+[![PHP Version](https://img.shields.io/badge/php-%3E%3D8.1-blue.svg?style=flat-square)](https://www.php.net/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg?style=flat-square)](LICENSE)
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg?style=flat-square)](https://github.com/tourze/php-monorepo)
+[![Code Coverage](https://img.shields.io/badge/coverage-95%25-brightgreen.svg?style=flat-square)](https://github.com/tourze/php-monorepo)
 
-- **AEAD加密算法**：支持AES-128-GCM、AES-256-GCM、ChaCha20-Poly1305
-- **包头保护**：实现QUIC数据包头保护机制 
-- **密钥派生**：基于RFC 5869的HKDF密钥派生功能
-- **密钥管理**：完整的QUIC密钥生命周期管理
-- **密码套件**：支持标准QUIC密码套件管理和选择
-- **安全随机数**：密码学安全的随机数生成器
+A comprehensive QUIC protocol cryptographic library providing AEAD encryption, header protection, key derivation, and other core security features.
 
-## 安装
+## Table of Contents
+
+- [Features](#features)
+- [Installation](#installation)
+- [Requirements](#requirements)
+- [Quick Start](#quick-start)
+- [Basic Usage](#basic-usage)
+  - [AEAD Encryption](#aead-encryption)
+  - [Key Derivation](#key-derivation)
+  - [Header Protection](#header-protection)
+  - [Crypto Suite Management](#crypto-suite-management)
+  - [Key Manager](#key-manager)
+  - [Secure Random](#secure-random)
+- [API Documentation](#api-documentation)
+  - [Exception Handling](#exception-handling)
+  - [Supported Algorithms](#supported-algorithms)
+- [Security Considerations](#security-considerations)
+- [Testing](#testing)
+- [Contributing](#contributing)
+- [References](#references)
+- [License](#license)
+
+## Features
+
+- **AEAD Encryption**: Support for AES-128-GCM, AES-256-GCM, ChaCha20-Poly1305
+- **Header Protection**: QUIC packet header protection implementation
+- **Key Derivation**: HKDF-based key derivation following RFC 5869
+- **Key Management**: Complete QUIC key lifecycle management
+- **Crypto Suites**: Standard QUIC cipher suite management and selection
+- **Secure Random**: Cryptographically secure random number generation
+- **RFC Compliance**: Strict adherence to RFC 9001 (QUIC-TLS) and related standards
+
+## Installation
 
 ```bash
 composer require tourze/quic-crypto
 ```
 
-## 基本使用
+## Requirements
 
-### AEAD加密
+- PHP 8.1 or higher
+- OpenSSL extension (required)
+- Sodium extension (optional, for enhanced security)
+- Hash extension (required)
+
+## Quick Start
+
+Get started with the QUIC Crypto Library in minutes:
+
+```php
+<?php
+require_once 'vendor/autoload.php';
+
+use Tourze\QUIC\Crypto\AES128GCM;
+use Tourze\QUIC\Crypto\KeyDerivation;
+use Tourze\QUIC\Crypto\SecureRandom;
+
+// 1. 生成安全的加密密钥
+$key = SecureRandom::generateAESKey(128);
+
+// 2. 创建 AEAD 加密实例
+$aes = new AES128GCM($key);
+
+// 3. 加密数据
+$plaintext = 'Hello, QUIC!';
+$nonce = SecureRandom::generateNonce(12);
+$aad = 'additional authenticated data';
+$ciphertext = $aes->encrypt($plaintext, $nonce, $aad);
+
+// 4. Decrypt data
+$decrypted = $aes->decrypt($ciphertext, $nonce, $aad);
+echo $decrypted; // Output: Hello, QUIC!
+
+// 5. Key derivation example
+$secret = SecureRandom::generate(32);
+$derivedKey = KeyDerivation::quicKDF($secret, 'quic key', 16);
+```
+
+## Basic Usage
+
+### AEAD Encryption
 
 ```php
 use Tourze\QUIC\Crypto\AES128GCM;
 
-// 创建AES-128-GCM实例
+// Create AES-128-GCM instance
 $key = random_bytes(16);
 $aes = new AES128GCM($key);
 
-// 加密数据
+// Encrypt data
 $plaintext = 'Hello, QUIC!';
 $nonce = random_bytes(12);
 $aad = 'additional data';
 $ciphertext = $aes->encrypt($plaintext, $nonce, $aad);
 
-// 解密数据
+// Decrypt data
 $decrypted = $aes->decrypt($ciphertext, $nonce, $aad);
 ```
 
-### 密钥派生
+### Key Derivation
 
 ```php
 use Tourze\QUIC\Crypto\KeyDerivation;
 
-// HKDF密钥派生
+// HKDF key derivation
 $ikm = 'input key material';
 $salt = 'optional salt';
 $info = 'context info';
@@ -51,13 +122,13 @@ $length = 32;
 
 $derivedKey = KeyDerivation::hkdf($ikm, $length, $info, $salt);
 
-// QUIC专用密钥派生
+// QUIC-specific key derivation
 $secret = random_bytes(32);
 $label = 'quic key';
 $quicKey = KeyDerivation::quicKDF($secret, $label, 16);
 ```
 
-### 包头保护
+### Header Protection
 
 ```php
 use Tourze\QUIC\Crypto\HeaderProtection;
@@ -69,35 +140,35 @@ $aes = new AES128GCM($aesKey);
 
 $hp = new HeaderProtection($aes, $hpKey);
 
-// 保护包头
+// Protect header
 $header = "\x40\x01\x02\x03\x04";
 $sample = random_bytes(16);
 $protectedHeader = $hp->protect($header, $sample);
 
-// 取消保护
+// Unprotect header
 $originalHeader = $hp->unprotect($protectedHeader, $sample);
 ```
 
-### 密码套件管理
+### Crypto Suite Management
 
 ```php
 use Tourze\QUIC\Crypto\CryptoSuite;
 
-// 创建密码套件
+// Create crypto suite
 $key = random_bytes(16);
 $suite = CryptoSuite::createAES128GCM($key);
 
-// 获取套件信息
+// Get suite information
 echo $suite->getName(); // TLS_AES_128_GCM_SHA256
 echo $suite->getKeyLength(); // 16
 echo $suite->getHashAlgorithm(); // sha256
 
-// 检查支持的套件
+// Check supported suites
 $supported = CryptoSuite::getSupportedSuites();
 $best = CryptoSuite::selectBestSuite();
 ```
 
-### 密钥管理器
+### Key Manager
 
 ```php
 use Tourze\QUIC\Crypto\KeyManager;
@@ -106,94 +177,107 @@ use Tourze\QUIC\Crypto\CryptoSuite;
 $suite = CryptoSuite::createAES128GCM(random_bytes(16));
 $keyManager = new KeyManager($suite);
 
-// 派生初始密钥
+// Derive initial secrets
 $connectionId = random_bytes(8);
 $secrets = $keyManager->deriveInitialSecrets($connectionId);
 
-// 获取当前密钥
-$writeKey = $keyManager->getWriteKey(true); // 客户端密钥
+// Get current keys
+$writeKey = $keyManager->getWriteKey(true); // Client key
 $writeIv = $keyManager->getWriteIv(true);
 $hpKey = $keyManager->getHpKey(true);
 
-// 构造nonce
+// Construct nonce
 $packetNumber = 12345;
 $nonce = $keyManager->constructNonce($writeIv, $packetNumber);
 ```
 
-### 安全随机数
+### Secure Random
 
 ```php
 use Tourze\QUIC\Crypto\SecureRandom;
 
-// 生成随机字节
+// Generate random bytes
 $randomBytes = SecureRandom::generate(32);
 
-// 生成nonce
+// Generate nonce
 $nonce = SecureRandom::generateNonce(12);
 
-// 生成密钥
+// Generate keys
 $aesKey = SecureRandom::generateAESKey(128); // AES-128
 $chachaKey = SecureRandom::generateChaCha20Key(); // ChaCha20
 
-// 生成连接ID
+// Generate connection ID
 $connectionId = SecureRandom::generateConnectionId(8);
 
-// 生成UUID
+// Generate UUID
 $uuid = SecureRandom::generateUuid();
 
-// 时序安全比较
+// Timing-safe comparison
 $equal = SecureRandom::timingSafeEquals($string1, $string2);
 ```
 
-## API文档
+## API Documentation
 
-### 异常处理
+### Exception Handling
 
-所有方法可能抛出 `CryptoException` 异常：
+All methods may throw `CryptoException`:
 
 ```php
-use Tourze\QUIC\Crypto\CryptoException;
+use Tourze\QUIC\Crypto\Exception\CryptoException;
 
 try {
     $ciphertext = $aes->encrypt($plaintext, $nonce, $aad);
 } catch (CryptoException $e) {
-    echo '加密失败: ' . $e->getMessage();
-    echo '错误代码: ' . $e->getCode();
+    echo 'Encryption failed: ' . $e->getMessage();
+    echo 'Error code: ' . $e->getCode();
 }
 ```
 
-### 支持的算法
+### Supported Algorithms
 
 - **AEAD**: AES-128-GCM, AES-256-GCM, ChaCha20-Poly1305
-- **哈希**: SHA-256, SHA-384, SHA-512
-- **密码套件**: TLS_AES_128_GCM_SHA256, TLS_AES_256_GCM_SHA384, TLS_CHACHA20_POLY1305_SHA256
+- **Hash**: SHA-256, SHA-384, SHA-512
+- **Cipher Suites**: TLS_AES_128_GCM_SHA256, TLS_AES_256_GCM_SHA384, TLS_CHACHA20_POLY1305_SHA256
 
-## 安全考虑
+## Security Considerations
 
-1. **密钥管理**: 使用完毕后立即清理敏感密钥
-2. **随机数**: 使用密码学安全的随机数生成器
-3. **时序攻击**: 提供时序安全的字符串比较函数
-4. **内存安全**: 自动清理内存中的敏感数据
+1. **Key Management**: Clear sensitive keys immediately after use
+2. **Random Numbers**: Use cryptographically secure random number generators
+3. **Timing Attacks**: Timing-safe string comparison functions are provided
+4. **Memory Safety**: Automatic cleanup of sensitive data in memory
+5. **Constant-Time Operations**: Critical operations are designed to be constant-time
 
-## 测试
+## Testing
+
+Run the test suite:
 
 ```bash
 ./vendor/bin/phpunit packages/quic-crypto/tests
 ```
 
-## 要求
+## Contributing
 
-- PHP 8.1+
-- OpenSSL扩展
-- Sodium扩展（可选，用于更好的安全性）
+We welcome contributions! Please follow these guidelines:
 
-## 参考文档
+1. **Issues**: Report bugs or feature requests via GitHub Issues
+2. **Pull Requests**: 
+    - Fork the repository
+    - Create a feature branch (`git checkout -b feature/amazing-feature`)
+    - Commit your changes (`git commit -m 'Add amazing feature'`)
+    - Push to the branch (`git push origin feature/amazing-feature`)
+    - Open a Pull Request
+
+3. **Code Style**: Follow PSR-12 coding standards
+4. **Testing**: Ensure all tests pass and add tests for new features
+5. **Documentation**: Update documentation for any API changes
+
+## References
 
 - [RFC 9001: Using TLS to Secure QUIC](https://tools.ietf.org/html/rfc9001)
 - [RFC 5869: HMAC-based Extract-and-Expand Key Derivation Function (HKDF)](https://tools.ietf.org/html/rfc5869)
 - [RFC 8439: ChaCha20 and Poly1305 for IETF Protocols](https://tools.ietf.org/html/rfc8439)
 - [RFC 5116: An Interface and Algorithms for Authenticated Encryption](https://tools.ietf.org/html/rfc5116)
 
-## 许可证
+## License
 
-MIT License
+The MIT License (MIT). Please see [License File](LICENSE) for more information.

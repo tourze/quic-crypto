@@ -4,15 +4,26 @@ declare(strict_types=1);
 
 namespace Tourze\QUIC\Crypto\Tests;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Tourze\QUIC\Crypto\Exception\CryptoException;
 use Tourze\QUIC\Crypto\SecureRandom;
 
 /**
  * 安全随机数生成器测试类
+ *
+ * @internal
  */
-class SecureRandomTest extends TestCase
+#[CoversClass(SecureRandom::class)]
+final class SecureRandomTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // 没有特殊设置要求
+    }
+
     public function testBasicRandomGeneration(): void
     {
         $length = 16;
@@ -114,7 +125,7 @@ class SecureRandomTest extends TestCase
 
         // 测试多个随机数应该有差异
         $ints = [];
-        for ($i = 0; $i < 10; $i++) {
+        for ($i = 0; $i < 10; ++$i) {
             $ints[] = SecureRandom::generateInt(1, 1000);
         }
         $uniqueInts = array_unique($ints);
@@ -131,7 +142,7 @@ class SecureRandomTest extends TestCase
     public function testGenerateUuid(): void
     {
         $uuid = SecureRandom::generateUuid();
-        
+
         // UUID v4 格式验证
         $this->assertMatchesRegularExpression(
             '/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i',
@@ -151,11 +162,11 @@ class SecureRandomTest extends TestCase
     public function testGetRandomSourceInfo(): void
     {
         $info = SecureRandom::getRandomSourceInfo();
-        
+
         $this->assertArrayHasKey('random_bytes_available', $info);
         $this->assertArrayHasKey('openssl_available', $info);
         $this->assertArrayHasKey('sodium_available', $info);
-        
+
         $this->assertTrue($info['random_bytes_available']);
     }
 
@@ -169,7 +180,7 @@ class SecureRandomTest extends TestCase
         $this->assertTrue(SecureRandom::timingSafeEquals($string1, $string2));
         $this->assertFalse(SecureRandom::timingSafeEquals($string1, $string3));
         $this->assertFalse(SecureRandom::timingSafeEquals($string1, $string4));
-        
+
         // 测试不同长度
         $this->assertFalse(SecureRandom::timingSafeEquals('short', 'longer string'));
     }
@@ -278,7 +289,7 @@ class SecureRandomTest extends TestCase
     {
         $bytes = SecureRandom::generate(1000);
         $byteFreq = array_count_values(str_split($bytes));
-        
+
         // 检查是否有合理的字节分布（不应该全是同一个值）
         $this->assertGreaterThan(100, count($byteFreq));
     }
@@ -286,15 +297,15 @@ class SecureRandomTest extends TestCase
     public function testIntDistribution(): void
     {
         $values = [];
-        for ($i = 0; $i < 100; $i++) {
+        for ($i = 0; $i < 100; ++$i) {
             $values[] = SecureRandom::generateInt(1, 10);
         }
-        
+
         $distribution = array_count_values($values);
-        
+
         // 应该有多个不同的值
         $this->assertGreaterThan(5, count($distribution));
-        
+
         // 每个值都应该在范围内
         foreach ($values as $value) {
             $this->assertGreaterThanOrEqual(1, $value);
@@ -306,8 +317,8 @@ class SecureRandomTest extends TestCase
     {
         $largeData = SecureRandom::generate(1024 * 100); // 100KB
         $this->assertEquals(1024 * 100, strlen($largeData));
-        
+
         // 检查数据不全为零
         $this->assertNotEquals(str_repeat("\x00", 1024 * 100), $largeData);
     }
-} 
+}

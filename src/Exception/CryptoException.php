@@ -4,14 +4,12 @@ declare(strict_types=1);
 
 namespace Tourze\QUIC\Crypto\Exception;
 
-use Exception;
-
 /**
  * 加密操作异常类
  *
  * 用于处理所有加密、解密、密钥派生等操作中的错误
  */
-class CryptoException extends Exception
+class CryptoException extends \Exception
 {
     /**
      * 加密失败
@@ -56,11 +54,11 @@ class CryptoException extends Exception
     /**
      * 创建加密异常
      *
-     * @param string $message 错误消息
-     * @param int $code 错误代码
-     * @param Exception|null $previous 前一个异常
+     * @param string          $message  错误消息
+     * @param int             $code     错误代码
+     * @param \Exception|null $previous 前一个异常
      */
-    public function __construct(string $message = "", int $code = 0, ?Exception $previous = null)
+    public function __construct(string $message = '', int $code = 0, ?\Exception $previous = null)
     {
         parent::__construct($message, $code, $previous);
     }
@@ -71,9 +69,10 @@ class CryptoException extends Exception
     public static function encryptionFailed(string $reason = ''): self
     {
         $message = '加密失败';
-        if ($reason !== '') {
+        if ('' !== $reason) {
             $message .= ": {$reason}";
         }
+
         return new self($message, self::ENCRYPTION_FAILED);
     }
 
@@ -83,9 +82,10 @@ class CryptoException extends Exception
     public static function decryptionFailed(string $reason = ''): self
     {
         $message = '解密失败';
-        if ($reason !== '') {
+        if ('' !== $reason) {
             $message .= ": {$reason}";
         }
+
         return new self($message, self::DECRYPTION_FAILED);
     }
 
@@ -95,9 +95,10 @@ class CryptoException extends Exception
     public static function invalidKey(string $reason = ''): self
     {
         $message = '无效的密钥';
-        if ($reason !== '') {
+        if ('' !== $reason) {
             $message .= ": {$reason}";
         }
+
         return new self($message, self::INVALID_KEY);
     }
 
@@ -107,9 +108,10 @@ class CryptoException extends Exception
     public static function invalidNonce(string $reason = ''): self
     {
         $message = '无效的随机数';
-        if ($reason !== '') {
+        if ('' !== $reason) {
             $message .= ": {$reason}";
         }
+
         return new self($message, self::INVALID_NONCE);
     }
 
@@ -119,9 +121,10 @@ class CryptoException extends Exception
     public static function invalidParameter(string $reason = ''): self
     {
         $message = '无效的参数';
-        if ($reason !== '') {
+        if ('' !== $reason) {
             $message .= ": {$reason}";
         }
+
         return new self($message, self::INVALID_PARAMETER);
     }
 
@@ -139,10 +142,11 @@ class CryptoException extends Exception
     public static function opensslError(string $operation): self
     {
         $errors = [];
-        while ($error = openssl_error_string()) {
+        while (($error = openssl_error_string()) !== false) {
             $errors[] = $error;
         }
         $errorDetails = implode('; ', $errors);
+
         return new self("OpenSSL 操作失败 ({$operation}): {$errorDetails}", self::OPENSSL_ERROR);
     }
 
@@ -152,9 +156,10 @@ class CryptoException extends Exception
     public static function keyDerivationFailed(string $reason = ''): self
     {
         $message = '密钥派生失败';
-        if ($reason !== '') {
+        if ('' !== $reason) {
             $message .= ": {$reason}";
         }
+
         return new self($message, self::KEY_DERIVATION_FAILED);
     }
-} 
+}

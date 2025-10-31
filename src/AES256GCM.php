@@ -20,29 +20,22 @@ class AES256GCM implements AEADInterface
     private const TAG_LENGTH = 16; // 128 bits
 
     /**
-     * 加密密钥
-     */
-    private readonly string $key;
-
-    /**
      * 构造函数
      *
      * @param string $key 256位密钥（32字节）
+     *
      * @throws CryptoException 如果密钥长度不正确
      */
-    public function __construct(string $key)
-    {
-        if (strlen($key) !== self::KEY_LENGTH) {
-            throw CryptoException::invalidKey(
-                sprintf('AES-256-GCM 密钥长度必须为 %d 字节，实际为 %d 字节', self::KEY_LENGTH, strlen($key))
-            );
+    public function __construct(
+        private readonly string $key,
+    ) {
+        if (self::KEY_LENGTH !== strlen($key)) {
+            throw CryptoException::invalidKey(sprintf('AES-256-GCM 密钥长度必须为 %d 字节，实际为 %d 字节', self::KEY_LENGTH, strlen($key)));
         }
 
         if (!in_array(self::ALGORITHM, openssl_get_cipher_methods(), true)) {
             throw CryptoException::algorithmNotSupported(self::ALGORITHM);
         }
-
-        $this->key = $key;
     }
 
     /**
@@ -70,11 +63,11 @@ class AES256GCM implements AEADInterface
             self::TAG_LENGTH
         );
 
-        if ($ciphertext === false) {
+        if (false === $ciphertext) {
             throw CryptoException::opensslError('AES-256-GCM 加密');
         }
 
-        if (strlen($tag) !== self::TAG_LENGTH) {
+        if (self::TAG_LENGTH !== strlen($tag)) {
             throw CryptoException::encryptionFailed('认证标签长度不正确');
         }
 
@@ -104,7 +97,7 @@ class AES256GCM implements AEADInterface
             $aad
         );
 
-        if ($plaintext === false) {
+        if (false === $plaintext) {
             throw CryptoException::opensslError('AES-256-GCM 解密');
         }
 
@@ -135,14 +128,13 @@ class AES256GCM implements AEADInterface
      * 验证随机数长度
      *
      * @param string $nonce 随机数
+     *
      * @throws CryptoException 如果随机数长度不正确
      */
     private function validateNonce(string $nonce): void
     {
-        if (strlen($nonce) !== self::NONCE_LENGTH) {
-            throw CryptoException::invalidNonce(
-                sprintf('AES-256-GCM 随机数长度必须为 %d 字节，实际为 %d 字节', self::NONCE_LENGTH, strlen($nonce))
-            );
+        if (self::NONCE_LENGTH !== strlen($nonce)) {
+            throw CryptoException::invalidNonce(sprintf('AES-256-GCM 随机数长度必须为 %d 字节，实际为 %d 字节', self::NONCE_LENGTH, strlen($nonce)));
         }
     }
 
@@ -153,4 +145,4 @@ class AES256GCM implements AEADInterface
     {
         return in_array(self::ALGORITHM, openssl_get_cipher_methods(), true);
     }
-} 
+}

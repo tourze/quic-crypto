@@ -4,18 +4,29 @@ declare(strict_types=1);
 
 namespace Tourze\QUIC\Crypto\Tests;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Tourze\QUIC\Crypto\AES128GCM;
 use Tourze\QUIC\Crypto\AES256GCM;
 use Tourze\QUIC\Crypto\ChaCha20Poly1305;
-use Tourze\QUIC\Crypto\Exception\CryptoException;
 use Tourze\QUIC\Crypto\CryptoSuite;
+use Tourze\QUIC\Crypto\Exception\CryptoException;
 
 /**
  * 密码套件管理测试类
+ *
+ * @internal
  */
-class CryptoSuiteTest extends TestCase
+#[CoversClass(CryptoSuite::class)]
+final class CryptoSuiteTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // 没有特殊设置要求
+    }
+
     public function testCreateAES128GCM(): void
     {
         $key = str_repeat("\x01", 16);
@@ -47,7 +58,7 @@ class CryptoSuiteTest extends TestCase
     public function testCreateChaCha20Poly1305(): void
     {
         if (!ChaCha20Poly1305::isSupported()) {
-            $this->markTestSkipped('ChaCha20-Poly1305 不被系统支持');
+            self::markTestSkipped('ChaCha20-Poly1305 不被系统支持');
         }
 
         $key = str_repeat("\x03", 32);
@@ -117,12 +128,12 @@ class CryptoSuiteTest extends TestCase
         $selectedSuite = CryptoSuite::selectBestSuite($preferences);
 
         // 不支持的套件应该返回 null，然后尝试默认套件
-        if ($selectedSuite === null) {
+        if (null === $selectedSuite) {
             $defaultSuite = CryptoSuite::selectBestSuite();
             $this->assertNotNull($defaultSuite, '系统应该至少支持一个默认套件');
             $selectedSuite = $defaultSuite;
         }
-        
+
         // 应该返回默认支持的套件
         $supportedSuites = CryptoSuite::getSupportedSuites();
         $this->assertContains($selectedSuite, $supportedSuites);
@@ -269,7 +280,7 @@ class CryptoSuiteTest extends TestCase
     public function testCreateChaCha20Poly1305InvalidKey(): void
     {
         if (!ChaCha20Poly1305::isSupported()) {
-            $this->markTestSkipped('ChaCha20-Poly1305 不被系统支持');
+            self::markTestSkipped('ChaCha20-Poly1305 不被系统支持');
         }
 
         $this->expectException(CryptoException::class);
@@ -303,7 +314,7 @@ class CryptoSuiteTest extends TestCase
         $aad = 'performance';
 
         $start128 = microtime(true);
-        for ($i = 0; $i < 10; $i++) {
+        for ($i = 0; $i < 10; ++$i) {
             $ciphertext = $suite128->getAEAD()->encrypt($plaintext, $nonce, $aad);
             $decrypted = $suite128->getAEAD()->decrypt($ciphertext, $nonce, $aad);
             $this->assertEquals($plaintext, $decrypted);
@@ -311,7 +322,7 @@ class CryptoSuiteTest extends TestCase
         $time128 = microtime(true) - $start128;
 
         $start256 = microtime(true);
-        for ($i = 0; $i < 10; $i++) {
+        for ($i = 0; $i < 10; ++$i) {
             $ciphertext = $suite256->getAEAD()->encrypt($plaintext, $nonce, $aad);
             $decrypted = $suite256->getAEAD()->decrypt($ciphertext, $nonce, $aad);
             $this->assertEquals($plaintext, $decrypted);
@@ -326,7 +337,7 @@ class CryptoSuiteTest extends TestCase
     public function testAllSupportedSuitesWork(): void
     {
         $supportedSuites = CryptoSuite::getSupportedSuites();
-        
+
         foreach ($supportedSuites as $suiteName) {
             $keyLength = match ($suiteName) {
                 'TLS_AES_128_GCM_SHA256' => 16,
@@ -352,4 +363,4 @@ class CryptoSuiteTest extends TestCase
             $this->assertEquals($plaintext, $decrypted);
         }
     }
-} 
+}

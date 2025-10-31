@@ -18,7 +18,9 @@ class SecureRandom
      * 生成指定长度的安全随机字节
      *
      * @param int $length 随机字节长度
+     *
      * @return string 随机字节串
+     *
      * @throws CryptoException 如果无法生成安全随机数
      */
     public static function generate(int $length): string
@@ -42,7 +44,9 @@ class SecureRandom
      * 生成 AEAD 随机数 (Nonce)
      *
      * @param int $length 随机数长度，默认 12 字节（96位）
+     *
      * @return string 随机数
+     *
      * @throws CryptoException 如果生成失败
      */
     public static function generateNonce(int $length = 12): string
@@ -58,7 +62,9 @@ class SecureRandom
      * 生成 AES 密钥
      *
      * @param int $keySize 密钥大小（128 或 256 位）
+     *
      * @return string 密钥
+     *
      * @throws CryptoException 如果参数无效或生成失败
      */
     public static function generateAESKey(int $keySize = 128): string
@@ -75,6 +81,7 @@ class SecureRandom
      * 生成 ChaCha20 密钥
      *
      * @return string 256位密钥（32字节）
+     *
      * @throws CryptoException 如果生成失败
      */
     public static function generateChaCha20Key(): string
@@ -86,7 +93,9 @@ class SecureRandom
      * 生成盐值
      *
      * @param int $length 盐值长度，默认 32 字节
+     *
      * @return string 盐值
+     *
      * @throws CryptoException 如果生成失败
      */
     public static function generateSalt(int $length = 32): string
@@ -102,7 +111,9 @@ class SecureRandom
      * 生成 QUIC 连接 ID
      *
      * @param int $length 连接 ID 长度（0-20字节）
+     *
      * @return string 连接 ID
+     *
      * @throws CryptoException 如果参数无效或生成失败
      */
     public static function generateConnectionId(int $length = 8): string
@@ -111,7 +122,7 @@ class SecureRandom
             throw CryptoException::invalidParameter('QUIC 连接 ID 长度必须在 0-20 字节之间');
         }
 
-        if ($length === 0) {
+        if (0 === $length) {
             return '';
         }
 
@@ -123,7 +134,9 @@ class SecureRandom
      *
      * @param int $min 最小值
      * @param int $max 最大值
+     *
      * @return int 随机整数
+     *
      * @throws CryptoException 如果参数无效或生成失败
      */
     public static function generateInt(int $min = 0, int $max = PHP_INT_MAX): int
@@ -143,6 +156,7 @@ class SecureRandom
      * 生成随机 UUID v4
      *
      * @return string UUID 字符串
+     *
      * @throws CryptoException 如果生成失败
      */
     public static function generateUuid(): string
@@ -150,8 +164,8 @@ class SecureRandom
         $data = self::generate(16);
 
         // 设置版本号和变体
-        $data[6] = chr(ord($data[6]) & 0x0f | 0x40); // 版本 4
-        $data[8] = chr(ord($data[8]) & 0x3f | 0x80); // 变体
+        $data[6] = chr(ord($data[6]) & 0x0F | 0x40); // 版本 4
+        $data[8] = chr(ord($data[8]) & 0x3F | 0x80); // 变体
 
         return sprintf(
             '%08s-%04s-%04s-%04s-%12s',
@@ -174,6 +188,7 @@ class SecureRandom
         if (function_exists('random_bytes')) {
             try {
                 random_bytes(1);
+
                 return true;
             } catch (\Exception) {
                 return false;
@@ -186,7 +201,7 @@ class SecureRandom
     /**
      * 获取随机数源信息
      *
-     * @return array 随机数源信息
+     * @return array<string, mixed> 随机数源信息
      */
     public static function getRandomSourceInfo(): array
     {
@@ -213,7 +228,8 @@ class SecureRandom
      * 防止时序攻击的安全字符串比较
      *
      * @param string $known 已知字符串
-     * @param string $user 用户提供的字符串
+     * @param string $user  用户提供的字符串
+     *
      * @return bool 如果相等则返回 true
      */
     public static function timingSafeEquals(string $known, string $user): bool
@@ -229,11 +245,11 @@ class SecureRandom
 
         $result = 0;
         $length = strlen($known);
-        
-        for ($i = 0; $i < $length; $i++) {
+
+        for ($i = 0; $i < $length; ++$i) {
             $result |= ord($known[$i]) ^ ord($user[$i]);
         }
 
-        return $result === 0;
+        return 0 === $result;
     }
-} 
+}

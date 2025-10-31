@@ -1,0 +1,8 @@
+parameters:
+    ignoreErrors:
+        # 忽略 QUIC 加密包中的密码学算法类名 - 这些是标准的密码学术语命名
+        -
+            message: '#类名 "(AES128GCM|AES256GCM)" 不符合帕斯卡命名法.*#'
+            paths:
+                - src/AES128GCM.php
+                - src/AES256GCM.php

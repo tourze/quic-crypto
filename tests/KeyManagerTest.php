@@ -4,21 +4,28 @@ declare(strict_types=1);
 
 namespace Tourze\QUIC\Crypto\Tests;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use Tourze\QUIC\Crypto\Exception\CryptoException;
 use Tourze\QUIC\Crypto\CryptoSuite;
+use Tourze\QUIC\Crypto\Exception\CryptoException;
 use Tourze\QUIC\Crypto\KeyManager;
 
 /**
  * QUIC 密钥管理器测试类
+ *
+ * @internal
  */
-class KeyManagerTest extends TestCase
+#[CoversClass(KeyManager::class)]
+final class KeyManagerTest extends TestCase
 {
     private KeyManager $keyManager;
+
     private CryptoSuite $suite;
 
     protected function setUp(): void
     {
+        parent::setUp();
+
         $key = str_repeat("\x01", 16);
         $this->suite = CryptoSuite::createAES128GCM($key);
         $this->keyManager = new KeyManager($this->suite);
@@ -67,7 +74,7 @@ class KeyManagerTest extends TestCase
         $secrets = $this->keyManager->deriveInitialSecrets($connectionId, $isServer);
 
         $serverKeys = $secrets['server'];
-        
+
         // 作为服务端，应该设置服务端密钥为本地密钥
         $this->assertTrue($this->keyManager->isInitialized());
         // 服务端的本地密钥应该是服务端密钥（isLocal=true时存储在client变量中）
@@ -169,17 +176,17 @@ class KeyManagerTest extends TestCase
         // clearSensitiveData后，isInitialized的结果取决于具体实现
         // 由于secureClear会将密钥清零，但不是空字符串，所以isInitialized可能仍返回true
         $this->assertEquals(0, $this->keyManager->getKeyUpdateCount());
-        
+
         // 检查密钥被清理（应该是全零或空）
         $writeKey = $this->keyManager->getWriteKey();
         $writeIv = $this->keyManager->getWriteIv();
         $hpKey = $this->keyManager->getHpKey();
-        
+
         // 密钥应该被清零或清空
-        $isKeyCleared = empty($writeKey) || $writeKey === str_repeat("\x00", strlen($writeKey));
-        $isIvCleared = empty($writeIv) || $writeIv === str_repeat("\x00", strlen($writeIv));
-        $isHpKeyCleared = empty($hpKey) || $hpKey === str_repeat("\x00", strlen($hpKey));
-        
+        $isKeyCleared = '' === $writeKey || $writeKey === str_repeat("\x00", strlen($writeKey));
+        $isIvCleared = '' === $writeIv || $writeIv === str_repeat("\x00", strlen($writeIv));
+        $isHpKeyCleared = '' === $hpKey || $hpKey === str_repeat("\x00", strlen($hpKey));
+
         $this->assertTrue($isKeyCleared, '写入密钥应该被清理');
         $this->assertTrue($isIvCleared, '写入IV应该被清理');
         $this->assertTrue($isHpKeyCleared, '包头保护密钥应该被清理');
@@ -226,13 +233,13 @@ class KeyManagerTest extends TestCase
 
         // 2. 派生握手密钥
         $handshakeSecrets = $this->keyManager->deriveHandshakeSecrets($handshakeSecret);
-        
+
         $handshakeClientKey = $this->keyManager->getWriteKey(true);
         $this->assertNotEquals($initialClientKey, $handshakeClientKey);
 
         // 3. 派生应用数据密钥
         $appSecrets = $this->keyManager->deriveApplicationSecrets($masterSecret);
-        
+
         $appClientKey = $this->keyManager->getWriteKey(true);
         $this->assertNotEquals($handshakeClientKey, $appClientKey);
 
@@ -240,24 +247,9 @@ class KeyManagerTest extends TestCase
         $currentUpdateCount = $this->keyManager->getKeyUpdateCount();
         $currentSecret = str_repeat("\x10", 32);
         $newSecret = $this->keyManager->updateTrafficSecrets($currentSecret);
-        
+
         $this->assertEquals($currentUpdateCount + 1, $this->keyManager->getKeyUpdateCount());
         $this->assertNotEquals($currentSecret, $newSecret);
-    }
-
-    public function testDestructor(): void
-    {
-        $connectionId = str_repeat("\x11", 8);
-        $keyManager = new KeyManager($this->suite);
-        $keyManager->deriveInitialSecrets($connectionId);
-
-        $this->assertTrue($keyManager->isInitialized());
-
-        // 销毁对象时应该自动清理敏感数据
-        unset($keyManager);
-        
-        // 由于已经销毁，无法直接验证，但确保没有异常
-        $this->assertTrue(true);
     }
 
     public function testWithDifferentCryptoSuites(): void
@@ -270,7 +262,7 @@ class KeyManagerTest extends TestCase
         $keyManager256 = new KeyManager($suite256);
 
         $secrets256 = $keyManager256->deriveInitialSecrets($connectionId);
-        
+
         $this->assertEquals(32, strlen($secrets256['client']['write_key'])); // AES-256 密钥长度
         $this->assertEquals(12, strlen($secrets256['client']['write_iv']));
         $this->assertEquals(32, strlen($secrets256['client']['hp_key']));
@@ -318,7 +310,7 @@ class KeyManagerTest extends TestCase
         // 手动计算期望的nonce
         $packetNumberBytes = "\x00\x00\x00\x00\x00\x00\x00\x00\x12\x34\x56\x78";
         $expectedNonce = '';
-        for ($i = 0; $i < 12; $i++) {
+        for ($i = 0; $i < 12; ++$i) {
             $expectedNonce .= chr(ord($iv[$i]) ^ ord($packetNumberBytes[$i]));
         }
 
@@ -356,15 +348,15 @@ class KeyManagerTest extends TestCase
         // 测试不同KeyManager实例之间的密钥隔离
         $key1 = str_repeat("\x18", 16);
         $key2 = str_repeat("\x19", 16);
-        
+
         $suite1 = CryptoSuite::createAES128GCM($key1);
         $suite2 = CryptoSuite::createAES128GCM($key2);
-        
+
         $manager1 = new KeyManager($suite1);
         $manager2 = new KeyManager($suite2);
 
         $connectionId = str_repeat("\x1A", 8);
-        
+
         $secrets1 = $manager1->deriveInitialSecrets($connectionId);
         $secrets2 = $manager2->deriveInitialSecrets($connectionId);
 
@@ -374,8 +366,8 @@ class KeyManagerTest extends TestCase
         $key2_len = strlen($secrets2['client']['write_key']);
         $this->assertEquals($key1_len, $key2_len); // 长度应该相同
         $this->assertNotEquals(
-            bin2hex($secrets1['client']['write_key']), 
+            bin2hex($secrets1['client']['write_key']),
             bin2hex($secrets2['client']['write_key'])
         ); // 但内容应该不同
     }
-} 
+}

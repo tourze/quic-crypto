@@ -4,21 +4,27 @@ declare(strict_types=1);
 
 namespace Tourze\QUIC\Crypto\Tests;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Tourze\QUIC\Crypto\AES256GCM;
 use Tourze\QUIC\Crypto\Exception\CryptoException;
 
 /**
  * AES-256-GCM 测试类
+ *
+ * @internal
  */
-class AES256GCMTest extends TestCase
+#[CoversClass(AES256GCM::class)]
+final class AES256GCMTest extends TestCase
 {
     private AES256GCM $aes256gcm;
 
     protected function setUp(): void
     {
+        parent::setUp();
+
         if (!AES256GCM::isSupported()) {
-            $this->markTestSkipped('AES-256-GCM 不被系统支持');
+            self::markTestSkipped('AES-256-GCM 不被系统支持');
         }
 
         // 使用测试密钥
@@ -250,4 +256,30 @@ class AES256GCMTest extends TestCase
 
         $this->assertEquals($plaintext, $decrypted2);
     }
-} 
+
+    public function testEncrypt(): void
+    {
+        $plaintext = 'Test encrypt method for AES256';
+        $nonce = str_repeat("\x01", 12);
+        $aad = 'test aad for aes256';
+
+        $ciphertext = $this->aes256gcm->encrypt($plaintext, $nonce, $aad);
+
+        $this->assertIsString($ciphertext);
+        $this->assertGreaterThan(strlen($plaintext), strlen($ciphertext));
+        $this->assertNotEquals($plaintext, $ciphertext);
+    }
+
+    public function testDecrypt(): void
+    {
+        $plaintext = 'Test decrypt method for AES256';
+        $nonce = str_repeat("\x02", 12);
+        $aad = 'test aad for aes256';
+
+        $ciphertext = $this->aes256gcm->encrypt($plaintext, $nonce, $aad);
+        $decrypted = $this->aes256gcm->decrypt($ciphertext, $nonce, $aad);
+
+        $this->assertIsString($decrypted);
+        $this->assertEquals($plaintext, $decrypted);
+    }
+}

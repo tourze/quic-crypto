@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tourze\QUIC\Crypto\Tests;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Tourze\QUIC\Crypto\AES128GCM;
 use Tourze\QUIC\Crypto\AES256GCM;
@@ -13,15 +14,22 @@ use Tourze\QUIC\Crypto\HeaderProtection;
 
 /**
  * QUIC 包头保护测试类
+ *
+ * @internal
  */
-class HeaderProtectionTest extends TestCase
+#[CoversClass(HeaderProtection::class)]
+final class HeaderProtectionTest extends TestCase
 {
     private HeaderProtection $headerProtectionAES128;
+
     private HeaderProtection $headerProtectionAES256;
+
     private HeaderProtection $headerProtectionChaCha20;
 
     protected function setUp(): void
     {
+        parent::setUp();
+
         // AES-128 包头保护
         $aes128Key = str_repeat("\x01", 16);
         $aes128Hp = str_repeat("\x02", 16);
@@ -57,7 +65,7 @@ class HeaderProtectionTest extends TestCase
 
     public function testProtectionWithAES256(): void
     {
-        $header = "\x41\x11\x22\x33\x44\x55"; 
+        $header = "\x41\x11\x22\x33\x44\x55";
         $sample = str_repeat("\x08", 16);
 
         $protectedHeader = $this->headerProtectionAES256->protect($header, $sample);
@@ -70,7 +78,7 @@ class HeaderProtectionTest extends TestCase
     public function testProtectionWithChaCha20(): void
     {
         if (!ChaCha20Poly1305::isSupported()) {
-            $this->markTestSkipped('ChaCha20-Poly1305 不被系统支持');
+            self::markTestSkipped('ChaCha20-Poly1305 不被系统支持');
         }
 
         $header = "\x42\xAA\xBB\xCC\xDD\xEE\xFF";
@@ -86,14 +94,14 @@ class HeaderProtectionTest extends TestCase
     public function testLongHeader(): void
     {
         // 长包头格式 (首字节第7位为1)
-        $longHeader = "\xC0\x01\x02\x03\x04\x05\x06\x07\x08\x09"; 
+        $longHeader = "\xC0\x01\x02\x03\x04\x05\x06\x07\x08\x09";
         $sample = str_repeat("\x0A", 16);
 
         $protectedHeader = $this->headerProtectionAES128->protect($longHeader, $sample);
         $unprotectedHeader = $this->headerProtectionAES128->unprotect($protectedHeader, $sample);
 
         $this->assertEquals($longHeader, $unprotectedHeader);
-        
+
         // 长包头应该只保护第一个字节的低4位
         $firstByteOriginal = ord($longHeader[0]);
         $firstByteProtected = ord($protectedHeader[0]);
@@ -103,14 +111,14 @@ class HeaderProtectionTest extends TestCase
     public function testShortHeader(): void
     {
         // 短包头格式 (首字节第7位为0)
-        $shortHeader = "\x40\x01\x02\x03\x04"; 
+        $shortHeader = "\x40\x01\x02\x03\x04";
         $sample = str_repeat("\x0B", 16);
 
         $protectedHeader = $this->headerProtectionAES128->protect($shortHeader, $sample);
         $unprotectedHeader = $this->headerProtectionAES128->unprotect($protectedHeader, $sample);
 
         $this->assertEquals($shortHeader, $unprotectedHeader);
-        
+
         // 短包头应该保护第一个字节的低5位
         $firstByteOriginal = ord($shortHeader[0]);
         $firstByteProtected = ord($protectedHeader[0]);
@@ -133,10 +141,10 @@ class HeaderProtectionTest extends TestCase
     public function testGenerateMask(): void
     {
         $sample = str_repeat("\x0E", 16);
-        
+
         $mask = $this->headerProtectionAES128->generateMask($sample);
         $this->assertEquals(5, strlen($mask)); // 掩码应该是5字节
-        
+
         // 相同样本应该产生相同掩码
         $mask2 = $this->headerProtectionAES128->generateMask($sample);
         $this->assertEquals($mask, $mask2);
@@ -145,17 +153,21 @@ class HeaderProtectionTest extends TestCase
     public function testValidateSample(): void
     {
         $validSample = str_repeat("\x0F", 16);
-        
-        // 这个方法不应该抛出异常
+
+        // 验证正确长度的样本不会抛出异常
         $this->headerProtectionAES128->validateSample($validSample);
-        $this->assertTrue(true); // 如果没有异常则测试通过
+
+        // 验证错误长度的样本会抛出异常
+        $this->expectException(CryptoException::class);
+        $this->expectExceptionMessage('包头保护样本必须为 16 字节');
+        $this->headerProtectionAES128->validateSample(str_repeat("\x0F", 15));
     }
 
     public function testGetAlgorithmName(): void
     {
         $this->assertEquals('AES-128-GCM Header Protection', $this->headerProtectionAES128->getAlgorithmName());
         $this->assertEquals('AES-256-GCM Header Protection', $this->headerProtectionAES256->getAlgorithmName());
-        
+
         if (ChaCha20Poly1305::isSupported()) {
             $this->assertEquals('ChaCha20-Poly1305 Header Protection', $this->headerProtectionChaCha20->getAlgorithmName());
         }
@@ -289,17 +301,33 @@ class HeaderProtectionTest extends TestCase
     {
         // 测试掩码生成的一致性
         $sample = str_repeat("\x19", 16);
-        
+
         $mask1 = $this->headerProtectionAES128->generateMask($sample);
         $mask2 = $this->headerProtectionAES128->generateMask($sample);
-        
+
         $this->assertEquals($mask1, $mask2);
         $this->assertEquals(5, strlen($mask1));
-        
+
         // 不同样本应该产生不同掩码
         $differentSample = str_repeat("\x1A", 16);
         $differentMask = $this->headerProtectionAES128->generateMask($differentSample);
-        
+
         $this->assertNotEquals($mask1, $differentMask);
     }
-} 
+
+    public function testUnprotect(): void
+    {
+        $header = "\x40\x01\x02\x03\x04\x05";
+        $sample = str_repeat("\x1B", 16);
+
+        // 首先保护包头
+        $protectedHeader = $this->headerProtectionAES128->protect($header, $sample);
+
+        // 然后测试取消保护
+        $unprotectedHeader = $this->headerProtectionAES128->unprotect($protectedHeader, $sample);
+
+        $this->assertIsString($unprotectedHeader);
+        $this->assertEquals($header, $unprotectedHeader);
+        $this->assertEquals(strlen($header), strlen($unprotectedHeader));
+    }
+}

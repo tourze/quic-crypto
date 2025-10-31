@@ -15,11 +15,6 @@ use Tourze\QUIC\Crypto\Exception\CryptoException;
 class KeyManager
 {
     /**
-     * 密码套件
-     */
-    private readonly CryptoSuite $suite;
-
-    /**
      * 当前客户端写入密钥
      */
     private string $clientWriteKey = '';
@@ -59,9 +54,9 @@ class KeyManager
      *
      * @param CryptoSuite $suite 密码套件
      */
-    public function __construct(CryptoSuite $suite)
-    {
-        $this->suite = $suite;
+    public function __construct(
+        private readonly CryptoSuite $suite,
+    ) {
     }
 
     /**
@@ -78,18 +73,20 @@ class KeyManager
      * 根据 RFC 9001 Section 5.2 实现初始密钥派生
      *
      * @param string $connectionId 目标连接 ID
-     * @param bool $isServer 是否为服务端
-     * @return array 包含客户端和服务端密钥的数组
+     * @param bool   $isServer     是否为服务端
+     *
+     * @return array<string, array<string, string>> 包含客户端和服务端密钥的数组
+     *
      * @throws CryptoException 如果派生失败
      */
     public function deriveInitialSecrets(string $connectionId, bool $isServer = false): array
     {
         $initialSalt = KeyDerivation::getQuicInitialSalt();
-        
+
         // 将密码套件信息和连接ID组合作为输入密钥材料
         // 这确保了不同的密码套件产生不同的密钥
         $ikm = $connectionId . $this->suite->getName() . $this->getSuiteKeyMaterial();
-        
+
         $initialSecret = KeyDerivation::hkdfExtract($initialSalt, $ikm, $this->suite->getHashAlgorithm());
 
         // 派生客户端和服务端的初始密钥
@@ -110,10 +107,10 @@ class KeyManager
         }
 
         // 安全清理临时密钥
-        KeyDerivation::secureClear($initialSecret);
-        KeyDerivation::secureClear($clientInitialSecret);
-        KeyDerivation::secureClear($serverInitialSecret);
-        KeyDerivation::secureClear($ikm);
+        $initialSecret = KeyDerivation::secureClear($initialSecret);
+        $clientInitialSecret = KeyDerivation::secureClear($clientInitialSecret);
+        $serverInitialSecret = KeyDerivation::secureClear($serverInitialSecret);
+        $ikm = KeyDerivation::secureClear($ikm);
 
         return [
             'client' => $clientKeys,
@@ -125,8 +122,10 @@ class KeyManager
      * 派生握手密钥
      *
      * @param string $handshakeSecret 握手密钥
-     * @param bool $isServer 是否为服务端
-     * @return array 握手密钥材料
+     * @param bool   $isServer        是否为服务端
+     *
+     * @return array<string, array<string, string>> 握手密钥材料
+     *
      * @throws CryptoException 如果派生失败
      */
     public function deriveHandshakeSecrets(string $handshakeSecret, bool $isServer = false): array
@@ -147,8 +146,8 @@ class KeyManager
         }
 
         // 安全清理
-        KeyDerivation::secureClear($clientHandshakeSecret);
-        KeyDerivation::secureClear($serverHandshakeSecret);
+        $clientHandshakeSecret = KeyDerivation::secureClear($clientHandshakeSecret);
+        $serverHandshakeSecret = KeyDerivation::secureClear($serverHandshakeSecret);
 
         return [
             'client' => $clientKeys,
@@ -160,8 +159,10 @@ class KeyManager
      * 派生应用数据密钥
      *
      * @param string $masterSecret 主密钥
-     * @param bool $isServer 是否为服务端
-     * @return array 应用数据密钥材料
+     * @param bool   $isServer     是否为服务端
+     *
+     * @return array<string, array<string, string>> 应用数据密钥材料
+     *
      * @throws CryptoException 如果派生失败
      */
     public function deriveApplicationSecrets(string $masterSecret, bool $isServer = false): array
@@ -182,8 +183,8 @@ class KeyManager
         }
 
         // 安全清理
-        KeyDerivation::secureClear($clientAppSecret);
-        KeyDerivation::secureClear($serverAppSecret);
+        $clientAppSecret = KeyDerivation::secureClear($clientAppSecret);
+        $serverAppSecret = KeyDerivation::secureClear($serverAppSecret);
 
         return [
             'client' => $clientKeys,
@@ -195,13 +196,15 @@ class KeyManager
      * 更新应用数据密钥
      *
      * @param string $currentSecret 当前密钥
+     *
      * @return string 新的密钥
+     *
      * @throws CryptoException 如果更新失败
      */
     public function updateTrafficSecrets(string $currentSecret): string
     {
         $newSecret = KeyDerivation::quicKDF($currentSecret, 'traffic upd', $this->suite->getHashLength());
-        $this->keyUpdateCount++;
+        ++$this->keyUpdateCount;
 
         // 派生新的密钥材料
         $newKeys = $this->deriveKeysFromSecret($newSecret);
@@ -216,7 +219,9 @@ class KeyManager
      * 从密钥派生具体的密钥材料
      *
      * @param string $secret 基础密钥
-     * @return array 密钥材料
+     *
+     * @return array<string, string> 密钥材料
+     *
      * @throws CryptoException 如果派生失败
      */
     private function deriveKeysFromSecret(string $secret): array
@@ -244,9 +249,9 @@ class KeyManager
      * 设置密钥
      *
      * @param string $writeKey 写入密钥
-     * @param string $writeIv 写入 IV
-     * @param string $hpKey 包头保护密钥
-     * @param bool $isLocal 是否为本地密钥
+     * @param string $writeIv  写入 IV
+     * @param string $hpKey    包头保护密钥
+     * @param bool   $isLocal  是否为本地密钥
      */
     private function setKeys(string $writeKey, string $writeIv, string $hpKey, bool $isLocal): void
     {
@@ -265,6 +270,7 @@ class KeyManager
      * 获取写入密钥
      *
      * @param bool $isClient 是否获取客户端密钥
+     *
      * @return string 写入密钥
      */
     public function getWriteKey(bool $isClient = true): string
@@ -276,6 +282,7 @@ class KeyManager
      * 获取写入 IV
      *
      * @param bool $isClient 是否获取客户端 IV
+     *
      * @return string 写入 IV
      */
     public function getWriteIv(bool $isClient = true): string
@@ -287,6 +294,7 @@ class KeyManager
      * 获取包头保护密钥
      *
      * @param bool $isClient 是否获取客户端密钥
+     *
      * @return string 包头保护密钥
      */
     public function getHpKey(bool $isClient = true): string
@@ -297,9 +305,11 @@ class KeyManager
     /**
      * 构造 Nonce
      *
-     * @param string $iv 基础 IV
-     * @param int $packetNumber 包号
+     * @param string $iv           基础 IV
+     * @param int    $packetNumber 包号
+     *
      * @return string 构造的 Nonce
+     *
      * @throws CryptoException 如果构造失败
      */
     public function constructNonce(string $iv, int $packetNumber): string
@@ -314,7 +324,7 @@ class KeyManager
 
         // 与 IV 进行异或运算
         $nonce = '';
-        for ($i = 0; $i < strlen($iv); $i++) {
+        for ($i = 0; $i < strlen($iv); ++$i) {
             $nonce .= chr(ord($iv[$i]) ^ ord($packetNumberBytes[$i]));
         }
 
@@ -334,12 +344,12 @@ class KeyManager
      */
     public function clearSensitiveData(): void
     {
-        KeyDerivation::secureClear($this->clientWriteKey);
-        KeyDerivation::secureClear($this->clientWriteIv);
-        KeyDerivation::secureClear($this->serverWriteKey);
-        KeyDerivation::secureClear($this->serverWriteIv);
-        KeyDerivation::secureClear($this->clientHpKey);
-        KeyDerivation::secureClear($this->serverHpKey);
+        $this->clientWriteKey = KeyDerivation::secureClear($this->clientWriteKey);
+        $this->clientWriteIv = KeyDerivation::secureClear($this->clientWriteIv);
+        $this->serverWriteKey = KeyDerivation::secureClear($this->serverWriteKey);
+        $this->serverWriteIv = KeyDerivation::secureClear($this->serverWriteIv);
+        $this->clientHpKey = KeyDerivation::secureClear($this->clientHpKey);
+        $this->serverHpKey = KeyDerivation::secureClear($this->serverHpKey);
 
         $this->keyUpdateCount = 0;
     }
@@ -349,7 +359,7 @@ class KeyManager
      */
     public function isInitialized(): bool
     {
-        return !empty($this->clientWriteKey) || !empty($this->serverWriteKey);
+        return '' !== $this->clientWriteKey || '' !== $this->serverWriteKey;
     }
 
     /**
@@ -363,18 +373,18 @@ class KeyManager
     {
         // 获取密码套件的基本信息作为关键材料
         $info = $this->suite->getInfo();
-        
+
         // 组合关键信息创建唯一的套件材料
-        return hash('sha256', 
-            $info['name'] . 
-            $info['aead_algorithm'] . 
-            $info['hash_algorithm'] . 
-            $info['key_length'] . 
-            $info['nonce_length'] . 
-            $info['tag_length'] . 
+        return hash('sha256',
+            $info['name'] .
+            $info['aead_algorithm'] .
+            $info['hash_algorithm'] .
+            $info['key_length'] .
+            $info['nonce_length'] .
+            $info['tag_length'] .
             // 添加实例的唯一标识
             spl_object_hash($this->suite->getAEAD()),
             true
         );
     }
-} 
+}

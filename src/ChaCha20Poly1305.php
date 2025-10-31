@@ -20,11 +20,6 @@ class ChaCha20Poly1305 implements AEADInterface
     private const TAG_LENGTH = 16; // 128 bits
 
     /**
-     * 加密密钥
-     */
-    private readonly string $key;
-
-    /**
      * 是否使用 libsodium 实现
      */
     private readonly bool $useSodium;
@@ -33,24 +28,22 @@ class ChaCha20Poly1305 implements AEADInterface
      * 构造函数
      *
      * @param string $key 256位密钥（32字节）
+     *
      * @throws CryptoException 如果密钥长度不正确或算法不支持
      */
-    public function __construct(string $key)
-    {
-        if (strlen($key) !== self::KEY_LENGTH) {
-            throw CryptoException::invalidKey(
-                sprintf('ChaCha20-Poly1305 密钥长度必须为 %d 字节，实际为 %d 字节', self::KEY_LENGTH, strlen($key))
-            );
+    public function __construct(
+        private readonly string $key,
+    ) {
+        if (self::KEY_LENGTH !== strlen($key)) {
+            throw CryptoException::invalidKey(sprintf('ChaCha20-Poly1305 密钥长度必须为 %d 字节，实际为 %d 字节', self::KEY_LENGTH, strlen($key)));
         }
 
         // 优先使用 libsodium，如果不可用则使用 OpenSSL
         $this->useSodium = function_exists('sodium_crypto_aead_chacha20poly1305_ietf_encrypt');
-        
+
         if (!$this->useSodium && !in_array(self::OPENSSL_ALGORITHM, openssl_get_cipher_methods(), true)) {
             throw CryptoException::algorithmNotSupported('ChaCha20-Poly1305');
         }
-
-        $this->key = $key;
     }
 
     /**
@@ -109,10 +102,9 @@ class ChaCha20Poly1305 implements AEADInterface
      */
     private function encryptWithSodium(string $plaintext, string $nonce, string $aad): string
     {
-        $result = sodium_crypto_aead_chacha20poly1305_ietf_encrypt($plaintext, $aad, $nonce, $this->key);
-        
+        return sodium_crypto_aead_chacha20poly1305_ietf_encrypt($plaintext, $aad, $nonce, $this->key);
+
         // sodium_crypto_aead_chacha20poly1305_ietf_encrypt 失败时会抛出异常，不会返回 false
-        return $result;
     }
 
     /**
@@ -121,8 +113,8 @@ class ChaCha20Poly1305 implements AEADInterface
     private function decryptWithSodium(string $ciphertext, string $nonce, string $aad): string
     {
         $result = sodium_crypto_aead_chacha20poly1305_ietf_decrypt($ciphertext, $aad, $nonce, $this->key);
-        
-        if ($result === false) {
+
+        if (false === $result) {
             throw CryptoException::decryptionFailed('libsodium ChaCha20-Poly1305 解密失败');
         }
 
@@ -134,7 +126,6 @@ class ChaCha20Poly1305 implements AEADInterface
      */
     private function encryptWithOpenSSL(string $plaintext, string $nonce, string $aad): string
     {
-        /** @var string $tag */
         $tag = '';
         $ciphertext = openssl_encrypt(
             $plaintext,
@@ -147,12 +138,11 @@ class ChaCha20Poly1305 implements AEADInterface
             self::TAG_LENGTH
         );
 
-        if ($ciphertext === false) {
+        if (false === $ciphertext) {
             throw CryptoException::opensslError('ChaCha20-Poly1305 加密');
         }
 
-        /** @phpstan-ignore-next-line */
-        if (strlen($tag) !== self::TAG_LENGTH) {
+        if (self::TAG_LENGTH !== strlen((string) $tag)) {
             throw CryptoException::encryptionFailed('认证标签长度不正确');
         }
 
@@ -183,7 +173,7 @@ class ChaCha20Poly1305 implements AEADInterface
             $aad
         );
 
-        if ($plaintext === false) {
+        if (false === $plaintext) {
             throw CryptoException::opensslError('ChaCha20-Poly1305 解密');
         }
 
@@ -194,14 +184,13 @@ class ChaCha20Poly1305 implements AEADInterface
      * 验证随机数长度
      *
      * @param string $nonce 随机数
+     *
      * @throws CryptoException 如果随机数长度不正确
      */
     private function validateNonce(string $nonce): void
     {
-        if (strlen($nonce) !== self::NONCE_LENGTH) {
-            throw CryptoException::invalidNonce(
-                sprintf('ChaCha20-Poly1305 随机数长度必须为 %d 字节，实际为 %d 字节', self::NONCE_LENGTH, strlen($nonce))
-            );
+        if (self::NONCE_LENGTH !== strlen($nonce)) {
+            throw CryptoException::invalidNonce(sprintf('ChaCha20-Poly1305 随机数长度必须为 %d 字节，实际为 %d 字节', self::NONCE_LENGTH, strlen($nonce)));
         }
     }
 
@@ -210,7 +199,7 @@ class ChaCha20Poly1305 implements AEADInterface
      */
     public static function isSupported(): bool
     {
-        return function_exists('sodium_crypto_aead_chacha20poly1305_ietf_encrypt') ||
-               in_array(self::OPENSSL_ALGORITHM, openssl_get_cipher_methods(), true);
+        return function_exists('sodium_crypto_aead_chacha20poly1305_ietf_encrypt')
+               || in_array(self::OPENSSL_ALGORITHM, openssl_get_cipher_methods(), true);
     }
-} 
+}

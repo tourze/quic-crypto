@@ -15,41 +15,26 @@ use Tourze\QUIC\Crypto\Exception\CryptoException;
 class CryptoSuite
 {
     /**
-     * 套件名称
-     */
-    private readonly string $name;
-
-    /**
-     * AEAD 算法实例
-     */
-    private readonly AEADInterface $aead;
-
-    /**
-     * 哈希算法名称
-     */
-    private readonly string $hashAlgorithm;
-
-    /**
      * 构造函数
      *
-     * @param string $name 套件名称
-     * @param AEADInterface $aead AEAD 算法实例
-     * @param string $hashAlgorithm 哈希算法名称
+     * @param string        $name          套件名称
+     * @param AEADInterface $aead          AEAD 算法实例
+     * @param string        $hashAlgorithm 哈希算法名称
+     *
      * @throws CryptoException 如果参数无效
      */
-    public function __construct(string $name, AEADInterface $aead, string $hashAlgorithm)
-    {
-        if (empty($name)) {
+    public function __construct(
+        private readonly string $name,
+        private readonly AEADInterface $aead,
+        private readonly string $hashAlgorithm,
+    ) {
+        if ('' === $name) {
             throw CryptoException::invalidParameter('套件名称不能为空');
         }
 
         if (!in_array($hashAlgorithm, hash_algos(), true)) {
             throw CryptoException::algorithmNotSupported("哈希算法不支持: {$hashAlgorithm}");
         }
-
-        $this->name = $name;
-        $this->aead = $aead;
-        $this->hashAlgorithm = $hashAlgorithm;
     }
 
     /**
@@ -131,7 +116,7 @@ class CryptoSuite
      * 创建 AES-128-GCM 套件
      *
      * @param string $key 128位密钥
-     * @return self
+     *
      * @throws CryptoException 如果创建失败
      */
     public static function createAES128GCM(string $key): self
@@ -147,7 +132,7 @@ class CryptoSuite
      * 创建 AES-256-GCM 套件
      *
      * @param string $key 256位密钥
-     * @return self
+     *
      * @throws CryptoException 如果创建失败
      */
     public static function createAES256GCM(string $key): self
@@ -163,7 +148,7 @@ class CryptoSuite
      * 创建 ChaCha20-Poly1305 套件
      *
      * @param string $key 256位密钥
-     * @return self
+     *
      * @throws CryptoException 如果创建失败
      */
     public static function createChaCha20Poly1305(string $key): self
@@ -179,8 +164,8 @@ class CryptoSuite
      * 从套件名称创建套件（需要提供密钥）
      *
      * @param string $suiteName 套件名称
-     * @param string $key 密钥
-     * @return self
+     * @param string $key       密钥
+     *
      * @throws CryptoException 如果套件不支持
      */
     public static function fromName(string $suiteName, string $key): self
@@ -216,6 +201,7 @@ class CryptoSuite
      * 选择最佳密码套件
      *
      * @param string[] $preferredSuites 首选的密码套件列表
+     *
      * @return string|null 选择的密码套件，如果没有可用的则返回null
      */
     public static function selectBestSuite(array $preferredSuites = []): ?string
@@ -249,11 +235,13 @@ class CryptoSuite
      * 验证套件兼容性
      *
      * @param string $suiteName 套件名称
+     *
      * @return bool 如果兼容则返回 true
      */
     public static function isCompatible(string $suiteName): bool
     {
         $supportedSuites = self::getSupportedSuites();
+
         return in_array($suiteName, $supportedSuites, true);
     }
 
@@ -284,4 +272,4 @@ class CryptoSuite
             'supported' => $this->isSupported(),
         ];
     }
-} 
+}

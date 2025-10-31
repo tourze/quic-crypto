@@ -4,21 +4,27 @@ declare(strict_types=1);
 
 namespace Tourze\QUIC\Crypto\Tests;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Tourze\QUIC\Crypto\AES128GCM;
 use Tourze\QUIC\Crypto\Exception\CryptoException;
 
 /**
  * AES-128-GCM 测试类
+ *
+ * @internal
  */
-class AES128GCMTest extends TestCase
+#[CoversClass(AES128GCM::class)]
+final class AES128GCMTest extends TestCase
 {
     private AES128GCM $aes128gcm;
 
     protected function setUp(): void
     {
+        parent::setUp();
+
         if (!AES128GCM::isSupported()) {
-            $this->markTestSkipped('AES-128-GCM 不被系统支持');
+            self::markTestSkipped('AES-128-GCM 不被系统支持');
         }
 
         // 使用测试密钥
@@ -116,6 +122,9 @@ class AES128GCMTest extends TestCase
         // RFC 5116 测试向量
         $key = hex2bin('00000000000000000000000000000000');
         $nonce = hex2bin('000000000000000000000000');
+
+        $this->assertIsString($key);
+        $this->assertIsString($nonce);
         $plaintext = '';
         $aad = '';
 
@@ -133,4 +142,30 @@ class AES128GCMTest extends TestCase
     {
         $this->assertTrue(AES128GCM::isSupported());
     }
-} 
+
+    public function testEncrypt(): void
+    {
+        $plaintext = 'Test encrypt method';
+        $nonce = str_repeat("\x01", 12);
+        $aad = 'test aad';
+
+        $ciphertext = $this->aes128gcm->encrypt($plaintext, $nonce, $aad);
+
+        $this->assertIsString($ciphertext);
+        $this->assertGreaterThan(strlen($plaintext), strlen($ciphertext));
+        $this->assertNotEquals($plaintext, $ciphertext);
+    }
+
+    public function testDecrypt(): void
+    {
+        $plaintext = 'Test decrypt method';
+        $nonce = str_repeat("\x02", 12);
+        $aad = 'test aad';
+
+        $ciphertext = $this->aes128gcm->encrypt($plaintext, $nonce, $aad);
+        $decrypted = $this->aes128gcm->decrypt($ciphertext, $nonce, $aad);
+
+        $this->assertIsString($decrypted);
+        $this->assertEquals($plaintext, $decrypted);
+    }
+}
